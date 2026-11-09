@@ -1,0 +1,6 @@
+{
+  "summary": "Plano de implementação para integrar Google Maps Platform (mapa interativo + imagem estática PNG para o Telegram) e Gemini Maps Grounding (escolas estaduais, pontos de apoio, rotas rodoviárias/fluviais e dados climáticos) ao painel de monitoramento dos 144 municípios do Pará (SEDUC-PA).",
+  "updatedAt": "2026-11-05T02:18:06.480719072Z",
+  "requestFeedback": true,
+  "userFacing": true
+}

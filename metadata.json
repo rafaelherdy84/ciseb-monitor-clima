@@ -1,0 +1,6 @@
+{
+  "name": "SEDUC-PA Defesa Civil Escolar — Boletim Preditivo",
+  "description": "Sistema de Gestão de Risco e Defesa Civil Escolar da SEDUC-PA para elaboração de Boletins Preditivos Semanais de vigilância meteorológica para o Telegram.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
