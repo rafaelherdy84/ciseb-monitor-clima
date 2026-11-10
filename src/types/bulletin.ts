@@ -11,6 +11,10 @@ export interface MunicipalityRisk {
   tipoRisco: RiskType;
   /** Classificação oficial pelo Sistema de Bandeiramento SEDUC/PA */
   bandeira?: BandeiraLevel;
+  /** Status de transição/vigilância de 48h para amortecer variações bruscas */
+  statusTransicao?: 'em-vigilancia' | 'estavel';
+  /** Bandeira registrada nas últimas 24h/48h para histórico de acompanhamento */
+  bandeiraAnterior?: BandeiraLevel;
   /** Risco estimado de fumaça / qualidade do ar e redução hídrica (Protocolo El Niño) */
   riscoFumacaAr?: SmokeAirRiskLevel;
   /** Acumulado semanal previsto em mm (para risco hídrico) */

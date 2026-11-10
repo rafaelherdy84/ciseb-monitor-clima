@@ -140,6 +140,8 @@ export function App() {
               (m: MunicipalityRisk) => ({
                 ...m,
                 bandeira: m.bandeira ?? classifyBandeira(m),
+                bandeiraAnterior: m.bandeiraAnterior,
+                statusTransicao: m.statusTransicao,
                 riscoFumacaAr: m.riscoFumacaAr ?? classifySmokeAndWaterRisk(m),
               })
             );
@@ -178,6 +180,8 @@ export function App() {
         const loaded = rawLoaded.map((m) => ({
           ...m,
           bandeira: m.bandeira ?? classifyBandeira(m),
+          bandeiraAnterior: m.bandeiraAnterior,
+          statusTransicao: m.statusTransicao,
           riscoFumacaAr: m.riscoFumacaAr ?? classifySmokeAndWaterRisk(m),
         }));
         const fallbackDirs =
@@ -1010,13 +1014,21 @@ export function App() {
                                 </td>
 
                                 <td className="py-2.5 px-3 space-y-1">
-                                  <div>
+                                  <div className="flex flex-wrap items-center gap-1.5">
                                     <span
                                       className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold rounded-full border ${bSpec.badgeBg} ${bSpec.badgeText} ${bSpec.badgeBorder}`}
                                     >
                                       <Flag className="w-3 h-3" />
                                       <span>{bSpec.title}</span>
                                     </span>
+                                    {item.statusTransicao === 'em-vigilancia' && (
+                                      <span
+                                        className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-900 border border-amber-300 rounded whitespace-nowrap"
+                                        title="Esteve em Bandeira Vermelha nas últimas 24h/48h. Em período de vigilância preventiva de 48h para evitar desescalada abrupta."
+                                      >
+                                        🛡️ Transição 48h
+                                      </span>
+                                    )}
                                   </div>
                                   <div>
                                     {item.tipoRisco === 'hidrico' ? (

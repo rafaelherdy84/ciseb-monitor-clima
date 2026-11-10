@@ -301,6 +301,7 @@ const directivesDailyCache = new Map<
 >();
 
 const DAILY_SNAPSHOT_FILE = path.join(os.tmpdir(), 'ciseb-daily-snapshot.json');
+const PREVIOUS_SNAPSHOT_FILE = path.join(os.tmpdir(), 'ciseb-previous-snapshot.json');
 
 /**
  * Returns the calendar date key (YYYY-MM-DD) in America/Belem (UTC-3).
@@ -351,6 +352,20 @@ function saveDailySnapshotToDisk() {
     const allEntry = weatherCache.get('all');
     if (!allEntry || allEntry.cycleKey !== currentCycleKey) return;
     const dirEntry = directivesDailyCache.get(currentCycleKey);
+
+    // If a snapshot file exists from a previous cycle, preserve it as PREVIOUS_SNAPSHOT_FILE for 48h transitions
+    if (fs.existsSync(DAILY_SNAPSHOT_FILE)) {
+      try {
+        const oldContent = fs.readFileSync(DAILY_SNAPSHOT_FILE, 'utf-8');
+        const oldParsed = JSON.parse(oldContent);
+        if (oldParsed?.cycleKey && oldParsed.cycleKey !== currentCycleKey) {
+          fs.writeFileSync(PREVIOUS_SNAPSHOT_FILE, oldContent, 'utf-8');
+        }
+      } catch {
+        // Ignore read/write errors on previous snapshot
+      }
+    }
+
     const payload = {
       cycleKey: currentCycleKey,
       fetchedAt: allEntry.fetchedAt,
@@ -361,6 +376,31 @@ function saveDailySnapshotToDisk() {
   } catch {
     // Ignore transient disk write errors
   }
+}
+
+function getPreviousCycleBandeiraMap(): Map<string, 'verde' | 'amarela' | 'vermelha'> {
+  const map = new Map<string, 'verde' | 'amarela' | 'vermelha'>();
+  try {
+    let raw = null;
+    if (fs.existsSync(PREVIOUS_SNAPSHOT_FILE)) {
+      raw = JSON.parse(fs.readFileSync(PREVIOUS_SNAPSHOT_FILE, 'utf-8'));
+    } else if (fs.existsSync(DAILY_SNAPSHOT_FILE)) {
+      const candidate = JSON.parse(fs.readFileSync(DAILY_SNAPSHOT_FILE, 'utf-8'));
+      if (candidate?.cycleKey !== getBelemDateKey()) {
+        raw = candidate;
+      }
+    }
+    if (raw && Array.isArray(raw.municipalities)) {
+      for (const m of raw.municipalities) {
+        if (m?.municipio && m?.bandeira) {
+          map.set(m.municipio.toLowerCase(), m.bandeira);
+        }
+      }
+    }
+  } catch {
+    // Ignore fallback errors
+  }
+  return map;
 }
 
 function loadDailySnapshotFromDisk() {
@@ -435,12 +475,14 @@ async function fetchAndCacheRegionWeather(regionParam: ParaRegion) {
     forecastDates
   );
 
+  const previousBandeiraMap = getPreviousCycleBandeiraMap();
+
   const computed = candidates
     .map((item, idx) => {
       const daily = resultsArray[idx]?.daily;
       if (!daily) return null;
       const baseline = baselines.get(`${item.lat.toFixed(4)},${item.lon.toFixed(4)}`);
-      return computeRiskFromDaily(
+      const baseResult = computeRiskFromDaily(
         item.municipio,
         item.dre,
         daily,
@@ -449,6 +491,25 @@ async function fetchAndCacheRegionWeather(regionParam: ParaRegion) {
         item.lon,
         baseline
       );
+
+      // Amortecimento de 48h (Anti-Efeito Gangorra) para desescalada de Bandeira Vermelha
+      const prevBandeira = previousBandeiraMap.get(item.municipio.toLowerCase());
+      let finalBandeira = baseResult.bandeira;
+      let statusTransicao: 'em-vigilancia' | 'estavel' = 'estavel';
+
+      if (prevBandeira === 'vermelha' && baseResult.bandeira !== 'vermelha') {
+        // Se esteve em Bandeira Vermelha nas últimas 24/48h e hoje desescalou,
+        // mantém em estado de alerta e vigilância transitória (Bandeira Amarela em Vigilância)
+        finalBandeira = 'amarela';
+        statusTransicao = 'em-vigilancia';
+      }
+
+      return {
+        ...baseResult,
+        bandeira: finalBandeira,
+        bandeiraAnterior: prevBandeira,
+        statusTransicao,
+      };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
 

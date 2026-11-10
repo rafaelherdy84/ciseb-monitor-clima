@@ -174,6 +174,8 @@ export const StateSchoolsView: React.FC<StateSchoolsViewProps> = ({
             ...s,
             tipoRisco,
             bandeira,
+            bandeiraAnterior: live.bandeiraAnterior,
+            statusTransicao: live.statusTransicao,
             riscoFumacaAr,
             chuvaAcumuladaMm: live.chuvaAcumuladaMm,
             pico24hMm: live.pico24hMm,
@@ -800,13 +802,21 @@ export const StateSchoolsView: React.FC<StateSchoolsViewProps> = ({
                           </td>
 
                           <td className="py-3 px-3 space-y-1">
-                            <div>
+                            <div className="flex flex-wrap items-center gap-1.5">
                               <span
                                 className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold rounded-full border whitespace-nowrap ${bSpec.badgeBg} ${bSpec.badgeText} ${bSpec.badgeBorder}`}
                               >
                                 <Flag className="w-3 h-3" />
                                 <span>{bSpec.title}</span>
                               </span>
+                              {school.statusTransicao === 'em-vigilancia' && (
+                                <span
+                                  className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-900 border border-amber-300 rounded whitespace-nowrap"
+                                  title="Esteve em Bandeira Vermelha nas últimas 24h/48h. Em período de vigilância preventiva de 48h para evitar desescalada abrupta."
+                                >
+                                  🛡️ Transição 48h
+                                </span>
+                              )}
                             </div>
 
                             {school.tipoRisco === 'hidrico' ? (

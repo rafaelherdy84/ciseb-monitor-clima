@@ -16,10 +16,18 @@ export function classifyBandeira(
     | 'anomaliaTempC'
     | 'anomaliaChuvaPct'
     | 'bandeira'
+    | 'bandeiraAnterior'
+    | 'statusTransicao'
   >
 ): BandeiraLevel {
   if (item.bandeira) {
     return item.bandeira;
+  }
+
+  // Amortecimento de 48h: se estava em Bandeira Vermelha e as métricas hoje desescalaram,
+  // mantém em Bandeira Amarela (Estado de Vigilância / Desescalada)
+  if (item.bandeiraAnterior === 'vermelha' || item.statusTransicao === 'em-vigilancia') {
+    return 'amarela';
   }
 
   const temp = item.tempMaximaC ?? 0;
